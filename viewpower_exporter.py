@@ -34,10 +34,7 @@ from prometheus_client import (
     CONTENT_TYPE_LATEST,
 )
 
-
-# ---------------------------------------------------------------------------
 # Logging
-# ---------------------------------------------------------------------------
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,10 +43,7 @@ logging.basicConfig(
 
 logger = logging.getLogger("viewpower-exporter")
 
-
-# ---------------------------------------------------------------------------
 # UPS data
-# ---------------------------------------------------------------------------
 
 @dataclass
 class UPSMetrics:
@@ -79,9 +73,7 @@ class UPSMetrics:
     bypass_active: bool
 
 
-# ---------------------------------------------------------------------------
 # ViewPower client
-# ---------------------------------------------------------------------------
 
 class ViewPowerClient:
     """
@@ -280,11 +272,7 @@ class ViewPowerClient:
 
         return float(value)
 
-
-# ---------------------------------------------------------------------------
 # Prometheus exporter
-# ---------------------------------------------------------------------------
-
 class ViewPowerExporter:
     """
     @brief Converts ViewPower data into Prometheus metrics.
@@ -306,9 +294,7 @@ class ViewPowerExporter:
 
         registry = CollectorRegistry()
 
-        # -------------------------------------------------------------------
         # Electrical metrics
-        # -------------------------------------------------------------------
 
         input_voltage = Gauge(
             "viewpower_input_voltage_volts",
@@ -346,9 +332,7 @@ class ViewPowerExporter:
             registry=registry,
         )
 
-        # -------------------------------------------------------------------
-        # Apparent power
-        # -------------------------------------------------------------------
+        # Apparent power-
 
         output_apparent_power = Gauge(
             "viewpower_output_apparent_power_va",
@@ -356,9 +340,7 @@ class ViewPowerExporter:
             registry=registry,
         )
 
-        # -------------------------------------------------------------------
         # Battery metrics
-        # -------------------------------------------------------------------
 
         battery_capacity = Gauge(
             "viewpower_battery_capacity_percent",
@@ -378,9 +360,7 @@ class ViewPowerExporter:
             registry=registry,
         )
 
-        # -------------------------------------------------------------------
         # Temperature
-        # -------------------------------------------------------------------
 
         temperature = Gauge(
             "viewpower_temperature_celsius",
@@ -388,9 +368,7 @@ class ViewPowerExporter:
             registry=registry,
         )
 
-        # -------------------------------------------------------------------
         # Status
-        # -------------------------------------------------------------------
 
         exporter_up = Gauge(
             "viewpower_exporter_up",
@@ -414,9 +392,7 @@ class ViewPowerExporter:
         try:
             metrics = self.client.get_metrics()
 
-            # ----------------------------------------------------------------
             # Electrical values
-            # ----------------------------------------------------------------
 
             input_voltage.set(
                 metrics.input_voltage
@@ -442,11 +418,8 @@ class ViewPowerExporter:
                 metrics.output_load_percent
             )
 
-            # ----------------------------------------------------------------
             # Apparent power
-            #
             # VA = V × A
-            # ----------------------------------------------------------------
 
             apparent_power = (
                 metrics.output_voltage
@@ -457,9 +430,7 @@ class ViewPowerExporter:
                 apparent_power
             )
 
-            # ----------------------------------------------------------------
             # Battery values
-            # ----------------------------------------------------------------
 
             battery_capacity.set(
                 metrics.battery_capacity
@@ -473,17 +444,13 @@ class ViewPowerExporter:
                 metrics.battery_voltage
             )
 
-            # ----------------------------------------------------------------
             # Temperature
-            # ----------------------------------------------------------------
 
             temperature.set(
                 metrics.temperature
             )
 
-            # ----------------------------------------------------------------
             # Status
-            # ----------------------------------------------------------------
 
             power_mode.labels(
                 mode=metrics.power_mode
@@ -509,9 +476,7 @@ class ViewPowerExporter:
         return generate_latest(registry)
 
 
-# ---------------------------------------------------------------------------
 # HTTP server
-# ---------------------------------------------------------------------------
 
 class MetricsHandler(BaseHTTPRequestHandler):
     """
@@ -588,9 +553,7 @@ class MetricsHandler(BaseHTTPRequestHandler):
         )
 
 
-# ---------------------------------------------------------------------------
 # Main
-# ---------------------------------------------------------------------------
 
 def main():
     """
@@ -638,18 +601,14 @@ def main():
 
     args = parser.parse_args()
 
-    # -----------------------------------------------------------------------
     # Create ViewPower client
-    # -----------------------------------------------------------------------
 
     client = ViewPowerClient(
         base_url=args.url,
         timeout=args.timeout,
     )
 
-    # -----------------------------------------------------------------------
     # Create exporter
-    # -----------------------------------------------------------------------
 
     exporter = ViewPowerExporter(
         client
@@ -657,9 +616,7 @@ def main():
 
     MetricsHandler.exporter = exporter
 
-    # -----------------------------------------------------------------------
     # Create HTTP server
-    # -----------------------------------------------------------------------
 
     server = HTTPServer(
         (args.listen, args.port),
@@ -683,9 +640,7 @@ def main():
         args.port,
     )
 
-    # -----------------------------------------------------------------------
     # Run server
-    # -----------------------------------------------------------------------
 
     try:
         server.serve_forever()
