@@ -18,7 +18,7 @@ services:
       - viewpower
 
   viewpower-exporter:
-    image: registry.nix.local/nixacy/viewpower-exporter:latest
+    image: nixacy/viewpower-exporter:latest
     container_name: viewpower-exporter
     restart: unless-stopped
 
