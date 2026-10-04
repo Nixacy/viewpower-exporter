@@ -579,9 +579,6 @@ class MetricsHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         """
         @brief Send HTTP logs through the application logger.
-
-        HTTP requests are logged at DEBUG level to avoid filling
-        the system journal with every Prometheus scrape.
         """
 
         logger.debug(
