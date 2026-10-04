@@ -1,0 +1,43 @@
+services:
+  viewpower:
+    image: ggong5/viewpower:latest
+    container_name: viewpower
+    restart: unless-stopped
+
+    ports:
+      - "15178:15178"
+      - "8005:8005" #ViewPower web service shutdown port
+
+    volumes:
+      - /opt/ViewPower/config:/opt/ViewPower/config
+      - /opt/ViewPower/datalog:/opt/ViewPower/datalog
+      - /opt/ViewPower/log:/opt/ViewPower/log
+      - /dev/bus/usb:/dev/bus/usb
+    privileged: true
+    networks:
+      - viewpower
+
+  viewpower-exporter:
+    image: registry.nix.local/nixacy/viewpower-exporter:latest
+    container_name: viewpower-exporter
+    restart: unless-stopped
+
+    command:
+      - "--url"
+      - "http://viewpower:15178/ViewPower"
+      - "--listen"
+      - "0.0.0.0"
+      - "--port"
+      - "9199"
+
+    ports:
+      - "9199:9199"
+
+    networks:
+      - viewpower
+
+networks:
+  viewpower:
+    driver: bridge
+
+
