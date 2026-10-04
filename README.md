@@ -11,7 +11,7 @@ Una máquina viertual/servidor dedicado con docker compose instalado y un SAI co
 
 A virtual machine or dedicated server with Docker Compose installed and a UPS connected, either directly, if it is a physical machine, or via hypervisor passthrough.
 
-# Configuraciones
+# Configuration
 By default, the service looks for the ViewPower API on the internal Docker network using the service name and its default port (15178).
 These details, as well as the IP addresses on which the service listens for requests and the port on which it is exposed, can be modified using commands defined within the Compose file itself. This involves adding a command block to the service configuration:
 
