@@ -66,3 +66,21 @@ networks:
     driver: bridge
 
 ```
+# Data exposed
+
+```
+viewpower_input_voltage_volts 233.8
+viewpower_output_voltage_volts 233.7
+viewpower_input_frequency_hertz 50.0
+viewpower_output_frequency_hertz 50.0
+viewpower_output_current_amperes 2.2
+viewpower_output_load_percent 18.0
+viewpower_output_apparent_power_va 514.14
+viewpower_battery_capacity_percent 100.0
+viewpower_battery_runtime_seconds 2160.0
+viewpower_battery_voltage_volts 82.0
+viewpower_temperature_celsius 26.4
+viewpower_exporter_up 1.0
+viewpower_power_mode_info{mode="Line mode"} 1.0
+viewpower_bypass_active 0.0 
+```
