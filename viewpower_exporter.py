@@ -156,7 +156,11 @@ class ViewPowerClient:
             )
 
         work_info = data.get("workInfo")
-
+        
+        for key, value in  work_info.items():
+        	if value in ("----" ,"", None):
+            	work_info[key] = 0.0
+                        
         if not isinstance(work_info, dict):
             raise RuntimeError(
                 "ViewPower response does not contain "
