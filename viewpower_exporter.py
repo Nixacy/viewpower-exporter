@@ -34,7 +34,10 @@ from prometheus_client import (
     CONTENT_TYPE_LATEST,
 )
 
+
+# ---------------------------------------------------------------------------
 # Logging
+# ---------------------------------------------------------------------------
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,7 +46,10 @@ logging.basicConfig(
 
 logger = logging.getLogger("viewpower-exporter")
 
+
+# ---------------------------------------------------------------------------
 # UPS data
+# ---------------------------------------------------------------------------
 
 @dataclass
 class UPSMetrics:
@@ -73,7 +79,9 @@ class UPSMetrics:
     bypass_active: bool
 
 
+# ---------------------------------------------------------------------------
 # ViewPower client
+# ---------------------------------------------------------------------------
 
 class ViewPowerClient:
     """
@@ -88,6 +96,7 @@ class ViewPowerClient:
 
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.invalid_fields = []
 
     def get_metrics(self) -> UPSMetrics:
         """
@@ -157,72 +166,109 @@ class ViewPowerClient:
 
         work_info = data.get("workInfo")
         
-        for key, value in  work_info.items():
-        	if value in ("----" ,"", None):
-            	work_info[key] = 0.0
-                        
         if not isinstance(work_info, dict):
             raise RuntimeError(
                 "ViewPower response does not contain "
                 "'workInfo'"
             )
 
+        self.invalid_fields = []
+
         try:
             input_voltage = self._float(
                 work_info,
                 "inputVoltage",
             )
+        except (KeyError, ValueError, TypeError):
+            input_voltage = 0.0
+            self.invalid_fields.append("inputVoltage")
 
+        try:
             output_voltage = self._float(
                 work_info,
                 "outputVoltage",
             )
+        except (KeyError, ValueError, TypeError):
+            output_voltage = 0.0
+            self.invalid_fields.append("outputVoltage")
 
+        try:
             input_frequency = self._float(
                 work_info,
                 "inputFrequency",
             )
+        except (KeyError, ValueError, TypeError):
+            input_frequency = 0.0
+            self.invalid_fields.append("inputFrequency")
 
+        try:
             output_frequency = self._float(
                 work_info,
                 "outputFrequency",
             )
+        except (KeyError, ValueError, TypeError):
+            output_frequency = 0.0
+            self.invalid_fields.append("outputFrequency")
 
+        try:
             output_current = self._float(
                 work_info,
                 "outputCurrent",
             )
+        except (KeyError, ValueError, TypeError):
+            output_current = 0.0
+            self.invalid_fields.append("outputCurrent")
 
+        try:
             output_load_percent = self._float(
                 work_info,
                 "outputLoadPercent",
             )
+        except (KeyError, ValueError, TypeError):
+            output_load_percent = 0.0
+            self.invalid_fields.append("outputLoadPercent")
 
+        try:
             battery_capacity = self._float(
                 work_info,
                 "batteryCapacity",
             )
+        except (KeyError, ValueError, TypeError):
+            battery_capacity = 0.0
+            self.invalid_fields.append("batteryCapacity")
 
-            # ViewPower reports remaining runtime in minutes.
+        try:
             battery_runtime_minutes = self._float(
                 work_info,
                 "batteryRemainTime",
             )
+        except (KeyError, ValueError, TypeError):
+            battery_runtime_minutes = 0.0
+            self.invalid_fields.append("batteryRemainTime")
 
+        try:
             battery_voltage = self._float(
                 work_info,
                 "batteryVoltage",
             )
+        except (KeyError, ValueError, TypeError):
+            battery_voltage = 0.0
+            self.invalid_fields.append("batteryVoltage")
 
+        try:
             temperature = self._float(
                 work_info,
                 "temperature",
             )
+        except (KeyError, ValueError, TypeError):
+            temperature = 0.0
+            self.invalid_fields.append("temperature")
 
-        except (KeyError, ValueError, TypeError) as exc:
-            raise RuntimeError(
-                "Invalid numeric value received from ViewPower"
-            ) from exc
+        if self.invalid_fields:
+            logger.debug(
+                "Invalid ViewPower fields: %s",
+                ", ".join(self.invalid_fields),
+            )
 
         power_mode = str(
             work_info.get("workMode", "unknown")
@@ -276,7 +322,11 @@ class ViewPowerClient:
 
         return float(value)
 
+
+# ---------------------------------------------------------------------------
 # Prometheus exporter
+# ---------------------------------------------------------------------------
+
 class ViewPowerExporter:
     """
     @brief Converts ViewPower data into Prometheus metrics.
@@ -298,7 +348,9 @@ class ViewPowerExporter:
 
         registry = CollectorRegistry()
 
+        # -------------------------------------------------------------------
         # Electrical metrics
+        # -------------------------------------------------------------------
 
         input_voltage = Gauge(
             "viewpower_input_voltage_volts",
@@ -336,7 +388,9 @@ class ViewPowerExporter:
             registry=registry,
         )
 
-        # Apparent power-
+        # -------------------------------------------------------------------
+        # Apparent power
+        # -------------------------------------------------------------------
 
         output_apparent_power = Gauge(
             "viewpower_output_apparent_power_va",
@@ -344,7 +398,9 @@ class ViewPowerExporter:
             registry=registry,
         )
 
+        # -------------------------------------------------------------------
         # Battery metrics
+        # -------------------------------------------------------------------
 
         battery_capacity = Gauge(
             "viewpower_battery_capacity_percent",
@@ -364,7 +420,9 @@ class ViewPowerExporter:
             registry=registry,
         )
 
+        # -------------------------------------------------------------------
         # Temperature
+        # -------------------------------------------------------------------
 
         temperature = Gauge(
             "viewpower_temperature_celsius",
@@ -372,7 +430,9 @@ class ViewPowerExporter:
             registry=registry,
         )
 
+        # -------------------------------------------------------------------
         # Status
+        # -------------------------------------------------------------------
 
         exporter_up = Gauge(
             "viewpower_exporter_up",
@@ -396,7 +456,9 @@ class ViewPowerExporter:
         try:
             metrics = self.client.get_metrics()
 
+            # ----------------------------------------------------------------
             # Electrical values
+            # ----------------------------------------------------------------
 
             input_voltage.set(
                 metrics.input_voltage
@@ -422,8 +484,11 @@ class ViewPowerExporter:
                 metrics.output_load_percent
             )
 
+            # ----------------------------------------------------------------
             # Apparent power
+            #
             # VA = V × A
+            # ----------------------------------------------------------------
 
             apparent_power = (
                 metrics.output_voltage
@@ -434,7 +499,9 @@ class ViewPowerExporter:
                 apparent_power
             )
 
+            # ----------------------------------------------------------------
             # Battery values
+            # ----------------------------------------------------------------
 
             battery_capacity.set(
                 metrics.battery_capacity
@@ -448,13 +515,17 @@ class ViewPowerExporter:
                 metrics.battery_voltage
             )
 
+            # ----------------------------------------------------------------
             # Temperature
+            # ----------------------------------------------------------------
 
             temperature.set(
                 metrics.temperature
             )
 
+            # ----------------------------------------------------------------
             # Status
+            # ----------------------------------------------------------------
 
             power_mode.labels(
                 mode=metrics.power_mode
@@ -480,7 +551,9 @@ class ViewPowerExporter:
         return generate_latest(registry)
 
 
+# ---------------------------------------------------------------------------
 # HTTP server
+# ---------------------------------------------------------------------------
 
 class MetricsHandler(BaseHTTPRequestHandler):
     """
@@ -498,10 +571,16 @@ class MetricsHandler(BaseHTTPRequestHandler):
         """
 
         if self.path == "/":
+            invalid_fields = self.exporter.client.invalid_fields
             body = (
-                b"ViewPower Prometheus Exporter\n"
-                b"Metrics available at /metrics\n"
-            )
+                "ViewPower Prometheus Exporter\n"
+                "Metrics available at /metrics\n"
+                "Made by: Nixacy \n"
+                "Github: https://github.com/Nixacy/viewpower-exporter\n"
+                "\n"
+                f"Invalid fields: {', '.join(invalid_fields) if invalid_fields else 'None'}\n"
+                ).encode("utf-8")
+            
 
             self.send_response(200)
 
@@ -548,6 +627,9 @@ class MetricsHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         """
         @brief Send HTTP logs through the application logger.
+
+        HTTP requests are logged at DEBUG level to avoid filling
+        the system journal with every Prometheus scrape.
         """
 
         logger.debug(
@@ -557,7 +639,9 @@ class MetricsHandler(BaseHTTPRequestHandler):
         )
 
 
+# ---------------------------------------------------------------------------
 # Main
+# ---------------------------------------------------------------------------
 
 def main():
     """
@@ -570,7 +654,7 @@ def main():
 
     parser.add_argument(
         "--url",
-        required=True,
+        default="http:viewpower:15178/ViewPower",
         help=(
             "ViewPower base URL, e.g. "
             "http://127.0.0.1:15178/ViewPower"
@@ -605,14 +689,18 @@ def main():
 
     args = parser.parse_args()
 
+    # -----------------------------------------------------------------------
     # Create ViewPower client
+    # -----------------------------------------------------------------------
 
     client = ViewPowerClient(
         base_url=args.url,
         timeout=args.timeout,
     )
 
+    # -----------------------------------------------------------------------
     # Create exporter
+    # -----------------------------------------------------------------------
 
     exporter = ViewPowerExporter(
         client
@@ -620,7 +708,9 @@ def main():
 
     MetricsHandler.exporter = exporter
 
+    # -----------------------------------------------------------------------
     # Create HTTP server
+    # -----------------------------------------------------------------------
 
     server = HTTPServer(
         (args.listen, args.port),
@@ -644,7 +734,9 @@ def main():
         args.port,
     )
 
+    # -----------------------------------------------------------------------
     # Run server
+    # -----------------------------------------------------------------------
 
     try:
         server.serve_forever()
