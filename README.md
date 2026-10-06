@@ -1,5 +1,5 @@
 # viewpower-exporter
-A simple docker image that reads Viwepower's exposed api and transforms the data to a prometheus valid format.
+A simple docker image that reads Viewpower's exposed api and transforms the data to a prometheus valid format.
 
 It should be compatible with all UPS models compatible with ViewPower, but I can only test it with mine.
 
