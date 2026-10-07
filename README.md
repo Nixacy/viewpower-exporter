@@ -4,7 +4,7 @@ A simple docker image that reads Viewpower's exposed api and transforms the data
 It should be compatible with all UPS models compatible with ViewPower, but I can only test it with mine.
 
 # Docker Hub
-https://hub.docker.com/repository/docker/nixacy/viewpower-exporter
+[Docker Hub](https://hub.docker.com/r/nixacy/viewpower-exporter)
 
 # Requirements
 Una máquina viertual/servidor dedicado con docker compose instalado y un SAI conectado, ya sea directamente si es una máquina real o mediante passthrough del hypervisor.
